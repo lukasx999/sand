@@ -1,24 +1,47 @@
 use macroquad::{miniquad::window::set_window_size, prelude::*};
 
-const WIDTH: usize = 700;
-const HEIGHT: usize = 700;
-const CELL_WIDTH: f32 = 10.0;
+const WIDTH: usize = 100;
+const HEIGHT: usize = 100;
+const CELL_SIZE: f32 = 9.0;
 
 const SCREEN_WIDTH: u32 = 1600;
 const SCREEN_HEIGHT: u32 = 900;
 
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
+enum Cell {
+    Filled,
+    #[default] Empty,
+}
+
+impl Cell {
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        *self == Self::Empty
+    }
+
+    #[must_use]
+    pub fn is_filled(&self) -> bool {
+        *self == Self::Filled
+    }
+
+}
+
 #[derive(Debug, Clone)]
 struct Grid {
-    grid: [[bool; WIDTH]; HEIGHT],
+    grid: [[Cell; WIDTH]; HEIGHT],
 }
 
 impl Grid {
     pub fn new() -> Self {
         let mut this = Self {
-            grid: [[false; WIDTH]; HEIGHT],
+            grid: [[Default::default(); WIDTH]; HEIGHT],
         };
-        this.grid[HEIGHT/2][WIDTH/2] = true;
+        this.grid[HEIGHT/2][WIDTH/2] = Cell::Filled;
         this
+    }
+
+    fn cell_at(&mut self, x: usize, y: usize) -> &mut Cell {
+        &mut self.grid[y][x]
     }
 
     pub fn update(&mut self) {
@@ -30,9 +53,16 @@ impl Grid {
 
                 if y == HEIGHT-1 { return; }
 
-                if *cell {
-                    self.grid[y][x] = false;
-                    self.grid[y+1][x] = true;
+                if cell.is_filled() {
+
+                    if self.cell_at(x, y+1).is_filled() {
+
+                    } else {
+                        *self.cell_at(x, y) = Cell::Empty;
+                        *self.cell_at(x, y+1) = Cell::Filled;
+
+                    }
+
                 }
 
             }
@@ -43,8 +73,14 @@ impl Grid {
 
         for (y, row) in self.grid.iter().enumerate() {
             for (x, cell) in row.iter().enumerate() {
-                if *cell {
-                    draw_rectangle(x as f32, y as f32, CELL_WIDTH, CELL_WIDTH, WHITE);
+                if cell.is_filled() {
+                    draw_rectangle(
+                        x as f32 * CELL_SIZE,
+                        y as f32 * CELL_SIZE,
+                        CELL_SIZE,
+                        CELL_SIZE,
+                        WHITE,
+                    );
                 }
             }
         }
@@ -53,7 +89,7 @@ impl Grid {
     pub fn handle_input(&mut self) {
         if is_mouse_button_down(MouseButton::Left) {
             let (x, y) = mouse_position();
-            self.grid[y as usize][x as usize] = true;
+            self.grid[(y/CELL_SIZE) as usize][(x/CELL_SIZE) as usize] = Cell::Filled;
         }
     }
 
@@ -72,6 +108,7 @@ async fn main() {
 
     loop {
         clear_background(BLACK);
+        draw_rectangle(0.0, 0.0, WIDTH as f32*CELL_SIZE, HEIGHT as f32 * CELL_SIZE, DARKGRAY);
 
         grid.update();
         grid.draw();
@@ -81,8 +118,6 @@ async fn main() {
             break;
         }
 
-
-        draw_rectangle_lines(0.0, 0.0, WIDTH as f32, HEIGHT as f32, 1.0, BLUE);
 
         next_frame().await
     }
