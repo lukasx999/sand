@@ -1,4 +1,5 @@
 use std::iter::Cycle;
+use std::array::IntoIter;
 
 use macroquad::{miniquad::window::set_window_size, prelude::*};
 
@@ -11,7 +12,8 @@ const SCREEN_HEIGHT: u32 = 900;
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
 enum Cell {
-    Filled,
+    Sand,
+    Water,
     Static,
     #[default] Empty,
 }
@@ -20,7 +22,8 @@ impl Cell {
     #[must_use]
     pub fn to_color(&self) -> Color {
         match self {
-            Cell::Filled => WHITE,
+            Cell::Sand => WHITE,
+            Cell::Water => BLUE,
             Cell::Static => BLACK,
             Cell::Empty  => GRAY,
         }
@@ -33,7 +36,7 @@ impl Cell {
 
     #[must_use]
     pub fn is_filled(&self) -> bool {
-        *self == Self::Filled
+        *self == Self::Sand
     }
 
     #[must_use]
@@ -55,6 +58,10 @@ impl Grid {
         }
     }
 
+    fn set_cell(&mut self, x: usize, y: usize, cell: Cell) {
+        self.grid[y][x] = cell;
+    }
+
     #[must_use]
     fn cell_at(&mut self, x: usize, y: usize) -> &mut Cell {
         &mut self.grid[y][x]
@@ -67,36 +74,80 @@ impl Grid {
         for (y, row) in grid.iter_mut().enumerate() {
             for (x, cell) in row.iter_mut().enumerate() {
 
-                if y == HEIGHT-1 { continue; }
-                if x == WIDTH-1 { continue; }
-                if x == 1 { continue; }
-                if cell.is_empty() { continue; }
-                if *cell == Cell::Static { continue; }
+                if y == HEIGHT-1 || x == WIDTH-1 || x == 1 {
+                    continue;
+                }
 
-                *self.cell_at(x, y) = Cell::Empty;
+                match *cell {
 
-                let down = self.cell_at(x, y+1).is_blocking();
-                if down {
+                    Cell::Water => {
+                        self.set_cell(x, y, Cell::Empty);
 
-                    let right = self.cell_at(x+1, y).is_empty();
-                    let left = self.cell_at(x-1, y).is_empty();
-                    let down_right = self.cell_at(x+1, y+1).is_empty();
-                    let down_left = self.cell_at(x-1, y+1).is_empty();
+                        let down = self.cell_at(x, y+1).is_blocking();
 
-                    if down_right && right {
-                        *self.cell_at(x+1, y+1) = Cell::Filled;
+                        if down {
 
-                    } else if down_left && left {
-                        *self.cell_at(x-1, y+1) = Cell::Filled;
+                            let right      = self.cell_at(x+1, y).is_empty();
+                            let down_right = self.cell_at(x+1, y+1).is_empty();
+                            let left       = self.cell_at(x-1, y).is_empty();
+                            let down_left  = self.cell_at(x-1, y+1).is_empty();
 
-                    } else {
-                        *self.cell_at(x, y) = Cell::Filled;
+                            if right && down_right {
+                                self.set_cell(x+1, y+1, Cell::Water);
+                            }
+
+                            else if right && !down_right {
+                                self.set_cell(x+1, y, Cell::Water);
+                            }
+
+                            else if left && down_left {
+                                self.set_cell(x-1, y+1, Cell::Water);
+                            }
+
+                            else if left && !down_left {
+                                self.set_cell(x-1, y, Cell::Water);
+
+                            } else {
+                                self.set_cell(x, y, Cell::Water);
+                            }
+
+
+                        } else {
+                            *self.cell_at(x, y+1) = Cell::Water;
+
+                        }
 
                     }
 
-                } else {
-                    *self.cell_at(x, y+1) = Cell::Filled;
+                    Cell::Sand => {
+                        self.set_cell(x, y, Cell::Empty);
 
+                        let down = self.cell_at(x, y+1).is_blocking();
+
+                        if down {
+
+                            let right      = self.cell_at(x+1, y).is_empty();
+                            let left       = self.cell_at(x-1, y).is_empty();
+                            let down_right = self.cell_at(x+1, y+1).is_empty();
+                            let down_left  = self.cell_at(x-1, y+1).is_empty();
+
+                            if down_right && right {
+                                self.set_cell(x+1, y+1, Cell::Sand);
+
+                            } else if down_left && left {
+                                self.set_cell(x-1, y+1, Cell::Sand);
+
+                            } else {
+                                self.set_cell(x, y, Cell::Sand);
+                            }
+
+                        } else {
+                            self.set_cell(x, y+1, Cell::Sand);
+                        }
+
+                    }
+
+                    Cell::Static | Cell::Empty => { }
                 }
 
 
@@ -119,14 +170,12 @@ impl Grid {
         }
     }
 
-
 }
-
 
 #[derive(Debug, Clone)]
 struct Application {
     grid: Grid,
-    tools: [Cell; 3],
+    tools: [Cell; 4],
     tools_idx: usize,
 }
 
@@ -134,7 +183,7 @@ impl Application {
     pub fn new() -> Self {
         Self {
             grid: Grid::new(),
-            tools: [ Cell::Filled, Cell::Static, Cell::Empty ],
+            tools: [ Cell::Sand, Cell::Water, Cell::Static, Cell::Empty ],
             // TODO: use cycling iterator
             tools_idx: 0,
         }
