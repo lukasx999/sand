@@ -1,6 +1,3 @@
-use std::array::IntoIter;
-use std::iter::Cycle;
-
 use macroquad::{miniquad::window::set_window_size, prelude::*};
 
 const WIDTH: usize = 100;
