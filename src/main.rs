@@ -1,5 +1,5 @@
-use std::iter::Cycle;
 use std::array::IntoIter;
+use std::iter::Cycle;
 
 use macroquad::{miniquad::window::set_window_size, prelude::*};
 
@@ -15,7 +15,8 @@ enum Cell {
     Sand,
     Water,
     Static,
-    #[default] Empty,
+    #[default]
+    Empty,
 }
 
 impl Cell {
@@ -25,7 +26,7 @@ impl Cell {
             Cell::Sand => WHITE,
             Cell::Water => BLUE,
             Cell::Static => BLACK,
-            Cell::Empty  => GRAY,
+            Cell::Empty => GRAY,
         }
     }
 
@@ -43,7 +44,6 @@ impl Cell {
     pub fn is_blocking(&self) -> bool {
         *self != Self::Empty
     }
-
 }
 
 #[derive(Debug, Clone)]
@@ -68,95 +68,72 @@ impl Grid {
     }
 
     pub fn update(&mut self) {
-
         let mut grid = self.grid.clone();
 
         for (y, row) in grid.iter_mut().enumerate() {
             for (x, cell) in row.iter_mut().enumerate() {
-
-                if y == HEIGHT-1 || x == WIDTH-1 || x == 1 {
+                if y == HEIGHT - 1 || x == WIDTH - 1 || x == 1 {
                     continue;
                 }
 
                 match *cell {
-
                     Cell::Water => {
                         self.set_cell(x, y, Cell::Empty);
 
-                        let down = self.cell_at(x, y+1).is_blocking();
+                        let down = self.cell_at(x, y + 1).is_blocking();
 
                         if down {
-
-                            let right      = self.cell_at(x+1, y).is_empty();
-                            let down_right = self.cell_at(x+1, y+1).is_empty();
-                            let left       = self.cell_at(x-1, y).is_empty();
-                            let down_left  = self.cell_at(x-1, y+1).is_empty();
+                            let right = self.cell_at(x + 1, y).is_empty();
+                            let down_right = self.cell_at(x + 1, y + 1).is_empty();
+                            let left = self.cell_at(x - 1, y).is_empty();
+                            let down_left = self.cell_at(x - 1, y + 1).is_empty();
 
                             if right && down_right {
-                                self.set_cell(x+1, y+1, Cell::Water);
-                            }
-
-                            else if right && !down_right {
-                                self.set_cell(x+1, y, Cell::Water);
-                            }
-
-                            else if left && down_left {
-                                self.set_cell(x-1, y+1, Cell::Water);
-                            }
-
-                            else if left && !down_left {
-                                self.set_cell(x-1, y, Cell::Water);
-
+                                self.set_cell(x + 1, y + 1, Cell::Water);
+                            } else if right && !down_right {
+                                self.set_cell(x + 1, y, Cell::Water);
+                            } else if left && down_left {
+                                self.set_cell(x - 1, y + 1, Cell::Water);
+                            } else if left && !down_left {
+                                self.set_cell(x - 1, y, Cell::Water);
                             } else {
                                 self.set_cell(x, y, Cell::Water);
                             }
-
-
                         } else {
-                            *self.cell_at(x, y+1) = Cell::Water;
-
+                            *self.cell_at(x, y + 1) = Cell::Water;
                         }
-
                     }
 
                     Cell::Sand => {
                         self.set_cell(x, y, Cell::Empty);
 
-                        let down = self.cell_at(x, y+1).is_blocking();
+                        let down = self.cell_at(x, y + 1).is_blocking();
 
                         if down {
-
-                            let right      = self.cell_at(x+1, y).is_empty();
-                            let left       = self.cell_at(x-1, y).is_empty();
-                            let down_right = self.cell_at(x+1, y+1).is_empty();
-                            let down_left  = self.cell_at(x-1, y+1).is_empty();
+                            let right = self.cell_at(x + 1, y).is_empty();
+                            let left = self.cell_at(x - 1, y).is_empty();
+                            let down_right = self.cell_at(x + 1, y + 1).is_empty();
+                            let down_left = self.cell_at(x - 1, y + 1).is_empty();
 
                             if down_right && right {
-                                self.set_cell(x+1, y+1, Cell::Sand);
-
+                                self.set_cell(x + 1, y + 1, Cell::Sand);
                             } else if down_left && left {
-                                self.set_cell(x-1, y+1, Cell::Sand);
-
+                                self.set_cell(x - 1, y + 1, Cell::Sand);
                             } else {
                                 self.set_cell(x, y, Cell::Sand);
                             }
-
                         } else {
-                            self.set_cell(x, y+1, Cell::Sand);
+                            self.set_cell(x, y + 1, Cell::Sand);
                         }
-
                     }
 
-                    Cell::Static | Cell::Empty => { }
+                    Cell::Static | Cell::Empty => {}
                 }
-
-
             }
         }
     }
 
     pub fn draw(&self) {
-
         for (y, row) in self.grid.iter().enumerate() {
             for (x, cell) in row.iter().enumerate() {
                 draw_rectangle(
@@ -169,7 +146,6 @@ impl Grid {
             }
         }
     }
-
 }
 
 #[derive(Debug, Clone)]
@@ -183,7 +159,7 @@ impl Application {
     pub fn new() -> Self {
         Self {
             grid: Grid::new(),
-            tools: [ Cell::Sand, Cell::Water, Cell::Static, Cell::Empty ],
+            tools: [Cell::Sand, Cell::Water, Cell::Static, Cell::Empty],
             // TODO: use cycling iterator
             tools_idx: 0,
         }
@@ -199,7 +175,13 @@ impl Application {
     fn draw_ui(&mut self) {
         let block_size = 50.0;
         let padding = 5.0;
-        draw_rectangle(padding, padding, block_size, block_size, self.tools[self.tools_idx].to_color());
+        draw_rectangle(
+            padding,
+            padding,
+            block_size,
+            block_size,
+            self.tools[self.tools_idx].to_color(),
+        );
         draw_rectangle_lines(padding, padding, block_size, block_size, 5.0, BLACK);
 
         let wheel = mouse_wheel().1;
@@ -209,40 +191,39 @@ impl Application {
             self.tools_idx = self.tools_idx.saturating_sub(1);
         }
         self.tools_idx %= self.tools.len();
-
     }
 
     fn handle_input(&mut self) {
         let (x, y) = mouse_position();
 
         if is_mouse_button_down(MouseButton::Left) {
-            let cell = &mut self.grid.grid[(y/CELL_SIZE) as usize][(x/CELL_SIZE) as usize];
+            let cell = &mut self.grid.grid[(y / CELL_SIZE) as usize][(x / CELL_SIZE) as usize];
             *cell = self.tools[self.tools_idx];
         }
-
     }
-
 }
-
-
 
 #[macroquad::main("BasicShapes")]
 async fn main() {
-
     set_window_size(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     let mut app = Application::new();
 
     loop {
         clear_background(BLACK);
-        draw_rectangle(0.0, 0.0, WIDTH as f32*CELL_SIZE, HEIGHT as f32 * CELL_SIZE, DARKGRAY);
+        draw_rectangle(
+            0.0,
+            0.0,
+            WIDTH as f32 * CELL_SIZE,
+            HEIGHT as f32 * CELL_SIZE,
+            DARKGRAY,
+        );
 
         app.update();
 
         if is_key_pressed(KeyCode::Escape) {
             break;
         }
-
 
         next_frame().await
     }
