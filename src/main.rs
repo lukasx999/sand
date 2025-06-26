@@ -18,7 +18,7 @@ enum Cell {
 
 impl Cell {
     #[must_use]
-    pub fn to_color(&self) -> Color {
+    pub fn as_color(&self) -> Color {
         match self {
             Cell::Sand => WHITE,
             Cell::Water => BLUE,
@@ -65,7 +65,7 @@ impl Grid {
     }
 
     pub fn update(&mut self) {
-        let mut grid = self.grid.clone();
+        let mut grid = self.grid;
 
         for (y, row) in grid.iter_mut().enumerate() {
             for (x, cell) in row.iter_mut().enumerate() {
@@ -138,7 +138,7 @@ impl Grid {
                     y as f32 * CELL_SIZE,
                     CELL_SIZE,
                     CELL_SIZE,
-                    cell.to_color(),
+                    cell.as_color(),
                 );
             }
         }
@@ -177,7 +177,7 @@ impl Application {
             padding,
             block_size,
             block_size,
-            self.tools[self.tools_idx].to_color(),
+            self.tools[self.tools_idx].as_color(),
         );
         draw_rectangle_lines(padding, padding, block_size, block_size, 5.0, BLACK);
 
