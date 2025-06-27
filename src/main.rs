@@ -75,17 +75,8 @@ impl Grid {
             let down_right = self.cell_at(x + 1, y + 1);
             let down_left = self.cell_at(x - 1, y + 1);
 
-            // if down_right.is_empty() && right.is_empty() {
-            //     self.set_cell(x + 1, y + 1, Cell::Sand);
-            // } else if down_left.is_empty() && left.is_empty() {
-            //     self.set_cell(x - 1, y + 1, Cell::Sand);
-            // } else {
-            //     self.set_cell(x, y, Cell::Sand);
-            // }
-
-
-            let random = rand::gen_range(0, 2);
-            if random == 1 {
+            let side = rand::gen_range(0, 2) == 1;
+            if side {
                 if right.is_empty() && down_right.is_empty() {
                     self.set_cell(x + 1, y + 1, Cell::Sand);
                     return;
@@ -96,21 +87,8 @@ impl Grid {
                     return;
                 }
             }
-                self.set_cell(x, y, Cell::Sand);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+            self.set_cell(x, y, Cell::Sand);
         } else {
             self.set_cell(x, y + 1, Cell::Sand);
         }
@@ -126,10 +104,8 @@ impl Grid {
             let left = self.cell_at(x - 1, y);
             let down_left = self.cell_at(x - 1, y + 1);
 
-            // randomly decide which side to choose
-            // TODO: better randomness
-            let random = rand::gen_range(0, 2);
-            if random == 1 {
+            let side = rand::gen_range(0, 2) == 1;
+            if side {
                 if right.is_empty() && down_right.is_empty() {
                     self.set_cell(x + 1, y + 1, Cell::Water);
                     return;
