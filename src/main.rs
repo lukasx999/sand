@@ -38,11 +38,6 @@ impl Cell {
     }
 
     #[must_use]
-    pub fn is_filled(&self) -> bool {
-        *self == Self::Sand
-    }
-
-    #[must_use]
     pub fn is_blocking(&self) -> bool {
         *self != Self::Empty
     }
@@ -50,13 +45,14 @@ impl Cell {
 
 #[derive(Debug, Clone)]
 struct Grid {
-    grid: [[Cell; WIDTH]; HEIGHT],
+    // use box to prevent stack overflow
+    grid: Box<[[Cell; WIDTH]; HEIGHT]>,
 }
 
 impl Grid {
     pub fn new() -> Self {
         Self {
-            grid: [[Default::default(); WIDTH]; HEIGHT],
+            grid: Box::new([[Default::default(); WIDTH]; HEIGHT]),
         }
     }
 
@@ -71,7 +67,6 @@ impl Grid {
 
     fn update_sand(&mut self, x: usize, y: usize) {
         self.set_cell(x, y, Cell::Empty);
-
         let down = self.cell_at(x, y + 1);
 
         if down.is_blocking() {
@@ -94,9 +89,9 @@ impl Grid {
 
     fn update_water(&mut self, x: usize, y: usize) {
         self.set_cell(x, y, Cell::Empty);
-        let down = self.cell_at(x, y + 1).is_blocking();
+        let down = self.cell_at(x, y + 1);
 
-        if down {
+        if down.is_blocking() {
             let right = self.cell_at(x + 1, y);
             let down_right = self.cell_at(x + 1, y + 1);
             let left = self.cell_at(x - 1, y);
@@ -104,11 +99,11 @@ impl Grid {
 
             if right.is_empty() && down_right.is_empty() {
                 self.set_cell(x + 1, y + 1, Cell::Water);
-            } else if right.is_empty() && down_right.is_blocking() {
+            } else if right.is_empty() {
                 self.set_cell(x + 1, y, Cell::Water);
             } else if left.is_empty() && down_left.is_empty() {
                 self.set_cell(x - 1, y + 1, Cell::Water);
-            } else if left.is_empty() && down_left.is_blocking() {
+            } else if left.is_empty() {
                 self.set_cell(x - 1, y, Cell::Water);
             } else {
                 self.set_cell(x, y, Cell::Water);
@@ -119,7 +114,7 @@ impl Grid {
     }
 
     pub fn update(&mut self) {
-        let mut grid = self.grid;
+        let mut grid = *self.grid;
 
         for (y, row) in grid.iter_mut().enumerate() {
             for (x, cell) in row.iter_mut().enumerate() {
