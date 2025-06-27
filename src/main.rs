@@ -75,14 +75,14 @@ impl Grid {
         let down = self.cell_at(x, y + 1);
 
         if down.is_blocking() {
-            let right = self.cell_at(x + 1, y).is_empty();
-            let left = self.cell_at(x - 1, y).is_empty();
-            let down_right = self.cell_at(x + 1, y + 1).is_empty();
-            let down_left = self.cell_at(x - 1, y + 1).is_empty();
+            let right = self.cell_at(x + 1, y);
+            let left = self.cell_at(x - 1, y);
+            let down_right = self.cell_at(x + 1, y + 1);
+            let down_left = self.cell_at(x - 1, y + 1);
 
-            if down_right && right {
+            if down_right.is_empty() && right.is_empty() {
                 self.set_cell(x + 1, y + 1, Cell::Sand);
-            } else if down_left && left {
+            } else if down_left.is_empty() && left.is_empty() {
                 self.set_cell(x - 1, y + 1, Cell::Sand);
             } else {
                 self.set_cell(x, y, Cell::Sand);
@@ -98,18 +98,18 @@ impl Grid {
         let down = self.cell_at(x, y + 1).is_blocking();
 
         if down {
-            let right = self.cell_at(x + 1, y).is_empty();
-            let down_right = self.cell_at(x + 1, y + 1).is_empty();
-            let left = self.cell_at(x - 1, y).is_empty();
-            let down_left = self.cell_at(x - 1, y + 1).is_empty();
+            let right = self.cell_at(x + 1, y);
+            let down_right = self.cell_at(x + 1, y + 1);
+            let left = self.cell_at(x - 1, y);
+            let down_left = self.cell_at(x - 1, y + 1);
 
-            if right && down_right {
+            if right.is_empty() && down_right.is_empty() {
                 self.set_cell(x + 1, y + 1, Cell::Water);
-            } else if right && !down_right {
+            } else if right.is_empty() && down_right.is_blocking() {
                 self.set_cell(x + 1, y, Cell::Water);
-            } else if left && down_left {
+            } else if left.is_empty() && down_left.is_empty() {
                 self.set_cell(x - 1, y + 1, Cell::Water);
-            } else if left && !down_left {
+            } else if left.is_empty() && down_left.is_blocking() {
                 self.set_cell(x - 1, y, Cell::Water);
             } else {
                 self.set_cell(x, y, Cell::Water);
