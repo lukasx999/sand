@@ -94,7 +94,6 @@ impl Grid {
 
     fn update_water(&mut self, x: usize, y: usize) {
         self.set_cell(x, y, Cell::Empty);
-
         let down = self.cell_at(x, y + 1).is_blocking();
 
         if down {
