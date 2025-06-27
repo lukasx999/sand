@@ -1,11 +1,11 @@
 use macroquad::{miniquad::window::set_window_size, prelude::*};
 
-const WIDTH: usize = 160;
-const HEIGHT: usize = 90;
-const CELL_SIZE: f32 = 9.0;
-
 const SCREEN_WIDTH: u32 = 1600;
 const SCREEN_HEIGHT: u32 = 900;
+
+const CELL_SIZE: f32 = 5.0;
+const WIDTH: usize = (SCREEN_WIDTH / CELL_SIZE as u32) as usize;
+const HEIGHT: usize = (SCREEN_HEIGHT / CELL_SIZE as u32) as usize;
 
 const OFFSET: Vec2 = Vec2::new(
     SCREEN_WIDTH as f32 / 2.0 - WIDTH as f32 * CELL_SIZE / 2.0,
@@ -25,7 +25,7 @@ impl Cell {
     #[must_use]
     pub fn as_color(&self) -> Color {
         match self {
-            Cell::Sand => WHITE,
+            Cell::Sand => BEIGE,
             Cell::Water => BLUE,
             Cell::Static => BLACK,
             Cell::Empty => GRAY,
@@ -65,27 +65,37 @@ impl Grid {
         self.grid[y][x]
     }
 
+    fn sand_right(&mut self, x: usize, y: usize) -> bool {
+        let right = self.cell_at(x + 1, y);
+        let down_right = self.cell_at(x + 1, y + 1);
+
+        if right.is_empty() && down_right.is_empty() {
+            self.set_cell(x + 1, y + 1, Cell::Sand);
+            return true;
+        }
+        false
+    }
+
+    fn sand_left(&mut self, x: usize, y: usize) -> bool {
+        let left = self.cell_at(x - 1, y);
+        let down_left = self.cell_at(x - 1, y + 1);
+
+        if left.is_empty() && down_left.is_empty() {
+            self.set_cell(x - 1, y + 1, Cell::Sand);
+            return true;
+        }
+        false
+    }
+
     fn update_sand(&mut self, x: usize, y: usize) {
         self.set_cell(x, y, Cell::Empty);
         let down = self.cell_at(x, y + 1);
 
         if down.is_blocking() {
-            let right = self.cell_at(x + 1, y);
-            let left = self.cell_at(x - 1, y);
-            let down_right = self.cell_at(x + 1, y + 1);
-            let down_left = self.cell_at(x - 1, y + 1);
-
-            let side = rand::gen_range(0, 2) == 1;
-            if side {
-                if right.is_empty() && down_right.is_empty() {
-                    self.set_cell(x + 1, y + 1, Cell::Sand);
-                    return;
-                }
-            } else {
-                if left.is_empty() && down_left.is_empty() {
-                    self.set_cell(x - 1, y + 1, Cell::Sand);
-                    return;
-                }
+            if self.sand_right(x, y) {
+                return;
+            } else if self.sand_left(x, y) {
+                return;
             }
 
             self.set_cell(x, y, Cell::Sand);
@@ -247,11 +257,14 @@ impl Application {
         y -= OFFSET.y;
 
         if is_mouse_button_down(MouseButton::Left) {
-            self.grid.set_cell(
-                (x / CELL_SIZE) as usize,
-                (y / CELL_SIZE) as usize,
-                self.tools[self.tools_idx],
-            );
+            let cell_x = (x / CELL_SIZE) as usize;
+            let cell_y = (y / CELL_SIZE) as usize;
+            let tool = self.tools[self.tools_idx];
+            self.grid.set_cell(cell_x, cell_y, tool);
+            self.grid.set_cell(cell_x+1, cell_y, tool);
+            self.grid.set_cell(cell_x-1, cell_y, tool);
+            self.grid.set_cell(cell_x, cell_y+1, tool);
+            self.grid.set_cell(cell_x, cell_y-1, tool);
         }
     }
 }
@@ -276,6 +289,8 @@ async fn main() {
 
         app.draw();
         app.handle_input_tools();
+
+        draw_fps();
 
         if is_key_pressed(KeyCode::Escape) {
             break;
