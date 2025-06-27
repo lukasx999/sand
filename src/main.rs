@@ -67,8 +67,8 @@ impl Grid {
     }
 
     #[must_use]
-    fn cell_at(&mut self, x: usize, y: usize) -> &mut Cell {
-        &mut self.grid[y][x]
+    fn cell_at(&mut self, x: usize, y: usize) -> Cell {
+        self.grid[y][x]
     }
 
     pub fn update(&mut self) {
@@ -104,16 +104,16 @@ impl Grid {
                                 self.set_cell(x, y, Cell::Water);
                             }
                         } else {
-                            *self.cell_at(x, y + 1) = Cell::Water;
+                            self.set_cell(x, y + 1, Cell::Water);
                         }
                     }
 
                     Cell::Sand => {
                         self.set_cell(x, y, Cell::Empty);
 
-                        let down = self.cell_at(x, y + 1).is_blocking();
+                        let down = self.cell_at(x, y + 1);
 
-                        if down {
+                        if down.is_blocking() {
                             let right = self.cell_at(x + 1, y).is_empty();
                             let left = self.cell_at(x - 1, y).is_empty();
                             let down_right = self.cell_at(x + 1, y + 1).is_empty();
