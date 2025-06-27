@@ -71,66 +71,68 @@ impl Grid {
         self.grid[y][x]
     }
 
+    fn update_sand(&mut self, x: usize, y: usize) {
+        self.set_cell(x, y, Cell::Empty);
+
+        let down = self.cell_at(x, y + 1);
+
+        if down.is_blocking() {
+            let right = self.cell_at(x + 1, y).is_empty();
+            let left = self.cell_at(x - 1, y).is_empty();
+            let down_right = self.cell_at(x + 1, y + 1).is_empty();
+            let down_left = self.cell_at(x - 1, y + 1).is_empty();
+
+            if down_right && right {
+                self.set_cell(x + 1, y + 1, Cell::Sand);
+            } else if down_left && left {
+                self.set_cell(x - 1, y + 1, Cell::Sand);
+            } else {
+                self.set_cell(x, y, Cell::Sand);
+            }
+        } else {
+            self.set_cell(x, y + 1, Cell::Sand);
+        }
+    }
+
+    fn update_water(&mut self, x: usize, y: usize) {
+        self.set_cell(x, y, Cell::Empty);
+
+        let down = self.cell_at(x, y + 1).is_blocking();
+
+        if down {
+            let right = self.cell_at(x + 1, y).is_empty();
+            let down_right = self.cell_at(x + 1, y + 1).is_empty();
+            let left = self.cell_at(x - 1, y).is_empty();
+            let down_left = self.cell_at(x - 1, y + 1).is_empty();
+
+            if right && down_right {
+                self.set_cell(x + 1, y + 1, Cell::Water);
+            } else if right && !down_right {
+                self.set_cell(x + 1, y, Cell::Water);
+            } else if left && down_left {
+                self.set_cell(x - 1, y + 1, Cell::Water);
+            } else if left && !down_left {
+                self.set_cell(x - 1, y, Cell::Water);
+            } else {
+                self.set_cell(x, y, Cell::Water);
+            }
+        } else {
+            self.set_cell(x, y + 1, Cell::Water);
+        }
+    }
+
     pub fn update(&mut self) {
         let mut grid = self.grid;
 
         for (y, row) in grid.iter_mut().enumerate() {
             for (x, cell) in row.iter_mut().enumerate() {
-                if y == HEIGHT - 1 || x == WIDTH - 1 || x == 1 {
+                if y == HEIGHT - 1 || x == WIDTH - 1 || x == 0 {
                     continue;
                 }
 
                 match *cell {
-                    Cell::Water => {
-                        self.set_cell(x, y, Cell::Empty);
-
-                        let down = self.cell_at(x, y + 1).is_blocking();
-
-                        if down {
-                            let right = self.cell_at(x + 1, y).is_empty();
-                            let down_right = self.cell_at(x + 1, y + 1).is_empty();
-                            let left = self.cell_at(x - 1, y).is_empty();
-                            let down_left = self.cell_at(x - 1, y + 1).is_empty();
-
-                            if right && down_right {
-                                self.set_cell(x + 1, y + 1, Cell::Water);
-                            } else if right && !down_right {
-                                self.set_cell(x + 1, y, Cell::Water);
-                            } else if left && down_left {
-                                self.set_cell(x - 1, y + 1, Cell::Water);
-                            } else if left && !down_left {
-                                self.set_cell(x - 1, y, Cell::Water);
-                            } else {
-                                self.set_cell(x, y, Cell::Water);
-                            }
-                        } else {
-                            self.set_cell(x, y + 1, Cell::Water);
-                        }
-                    }
-
-                    Cell::Sand => {
-                        self.set_cell(x, y, Cell::Empty);
-
-                        let down = self.cell_at(x, y + 1);
-
-                        if down.is_blocking() {
-                            let right = self.cell_at(x + 1, y).is_empty();
-                            let left = self.cell_at(x - 1, y).is_empty();
-                            let down_right = self.cell_at(x + 1, y + 1).is_empty();
-                            let down_left = self.cell_at(x - 1, y + 1).is_empty();
-
-                            if down_right && right {
-                                self.set_cell(x + 1, y + 1, Cell::Sand);
-                            } else if down_left && left {
-                                self.set_cell(x - 1, y + 1, Cell::Sand);
-                            } else {
-                                self.set_cell(x, y, Cell::Sand);
-                            }
-                        } else {
-                            self.set_cell(x, y + 1, Cell::Sand);
-                        }
-                    }
-
+                    Cell::Water => self.update_water(x, y),
+                    Cell::Sand => self.update_sand(x, y),
                     Cell::Static | Cell::Empty => {}
                 }
             }
@@ -242,7 +244,7 @@ impl Application {
     }
 }
 
-#[macroquad::main("BasicShapes")]
+#[macroquad::main("sand")]
 async fn main() {
     set_window_size(SCREEN_WIDTH, SCREEN_HEIGHT);
 
