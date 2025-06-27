@@ -1,11 +1,18 @@
 use macroquad::{miniquad::window::set_window_size, prelude::*};
+use std::array::IntoIter;
+use std::iter::Cycle;
 
-const WIDTH: usize = 100;
-const HEIGHT: usize = 100;
+const WIDTH: usize = 160;
+const HEIGHT: usize = 90;
 const CELL_SIZE: f32 = 9.0;
 
 const SCREEN_WIDTH: u32 = 1600;
 const SCREEN_HEIGHT: u32 = 900;
+
+const OFFSET: Vec2 = Vec2::new(
+    SCREEN_WIDTH as f32 / 2.0 - WIDTH as f32 * CELL_SIZE / 2.0,
+    SCREEN_HEIGHT as f32 / 2.0 - HEIGHT as f32 * CELL_SIZE / 2.0,
+);
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
 enum Cell {
@@ -134,8 +141,8 @@ impl Grid {
         for (y, row) in self.grid.iter().enumerate() {
             for (x, cell) in row.iter().enumerate() {
                 draw_rectangle(
-                    x as f32 * CELL_SIZE,
-                    y as f32 * CELL_SIZE,
+                    x as f32 * CELL_SIZE + OFFSET.x,
+                    y as f32 * CELL_SIZE + OFFSET.y,
                     CELL_SIZE,
                     CELL_SIZE,
                     cell.as_color(),
@@ -157,7 +164,6 @@ impl Application {
         Self {
             grid: Grid::new(),
             tools: [Cell::Sand, Cell::Water, Cell::Static, Cell::Empty],
-            // TODO: use cycling iterator
             tools_idx: 0,
         }
     }
@@ -172,30 +178,66 @@ impl Application {
     fn draw_ui(&mut self) {
         let block_size = 50.0;
         let padding = 5.0;
+
         draw_rectangle(
-            padding,
-            padding,
+            padding + OFFSET.x,
+            padding + OFFSET.y,
             block_size,
             block_size,
             self.tools[self.tools_idx].as_color(),
         );
-        draw_rectangle_lines(padding, padding, block_size, block_size, 5.0, BLACK);
+
+        draw_rectangle_lines(
+            padding + OFFSET.x,
+            padding + OFFSET.y,
+            block_size,
+            block_size,
+            5.0,
+            BLACK,
+        );
 
         let wheel = mouse_wheel().1;
+
         if wheel > 0.0 {
             self.tools_idx += 1;
         } else if wheel < 0.0 {
             self.tools_idx = self.tools_idx.saturating_sub(1);
         }
+
         self.tools_idx %= self.tools.len();
     }
 
+    fn set_tool(&mut self, cell: Cell) {
+        self.tools_idx = self.tools.iter().position(|item| *item == cell).unwrap();
+    }
+
     fn handle_input(&mut self) {
-        let (x, y) = mouse_position();
+        if is_key_pressed(KeyCode::W) {
+            self.set_tool(Cell::Water);
+        }
+
+        if is_key_pressed(KeyCode::S) {
+            self.set_tool(Cell::Sand);
+        }
+
+        if is_key_pressed(KeyCode::B) {
+            self.set_tool(Cell::Static);
+        }
+
+        if is_key_pressed(KeyCode::E) {
+            self.set_tool(Cell::Empty);
+        }
+
+        let (mut x, mut y) = mouse_position();
+        x -= OFFSET.x;
+        y -= OFFSET.y;
 
         if is_mouse_button_down(MouseButton::Left) {
-            let cell = &mut self.grid.grid[(y / CELL_SIZE) as usize][(x / CELL_SIZE) as usize];
-            *cell = self.tools[self.tools_idx];
+            self.grid.set_cell(
+                (x / CELL_SIZE) as usize,
+                (y / CELL_SIZE) as usize,
+                self.tools[self.tools_idx],
+            );
         }
     }
 }
@@ -208,13 +250,6 @@ async fn main() {
 
     loop {
         clear_background(BLACK);
-        draw_rectangle(
-            0.0,
-            0.0,
-            WIDTH as f32 * CELL_SIZE,
-            HEIGHT as f32 * CELL_SIZE,
-            DARKGRAY,
-        );
 
         app.update();
 
