@@ -75,13 +75,42 @@ impl Grid {
             let down_right = self.cell_at(x + 1, y + 1);
             let down_left = self.cell_at(x - 1, y + 1);
 
-            if down_right.is_empty() && right.is_empty() {
-                self.set_cell(x + 1, y + 1, Cell::Sand);
-            } else if down_left.is_empty() && left.is_empty() {
-                self.set_cell(x - 1, y + 1, Cell::Sand);
+            // if down_right.is_empty() && right.is_empty() {
+            //     self.set_cell(x + 1, y + 1, Cell::Sand);
+            // } else if down_left.is_empty() && left.is_empty() {
+            //     self.set_cell(x - 1, y + 1, Cell::Sand);
+            // } else {
+            //     self.set_cell(x, y, Cell::Sand);
+            // }
+
+
+            let random = rand::gen_range(0, 2);
+            if random == 1 {
+                if right.is_empty() && down_right.is_empty() {
+                    self.set_cell(x + 1, y + 1, Cell::Sand);
+                    return;
+                }
             } else {
-                self.set_cell(x, y, Cell::Sand);
+                if left.is_empty() && down_left.is_empty() {
+                    self.set_cell(x - 1, y + 1, Cell::Sand);
+                    return;
+                }
             }
+                self.set_cell(x, y, Cell::Sand);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         } else {
             self.set_cell(x, y + 1, Cell::Sand);
         }
@@ -97,17 +126,28 @@ impl Grid {
             let left = self.cell_at(x - 1, y);
             let down_left = self.cell_at(x - 1, y + 1);
 
-            if right.is_empty() && down_right.is_empty() {
-                self.set_cell(x + 1, y + 1, Cell::Water);
-            } else if right.is_empty() {
-                self.set_cell(x + 1, y, Cell::Water);
-            } else if left.is_empty() && down_left.is_empty() {
-                self.set_cell(x - 1, y + 1, Cell::Water);
-            } else if left.is_empty() {
-                self.set_cell(x - 1, y, Cell::Water);
+            // randomly decide which side to choose
+            // TODO: better randomness
+            let random = rand::gen_range(0, 2);
+            if random == 1 {
+                if right.is_empty() && down_right.is_empty() {
+                    self.set_cell(x + 1, y + 1, Cell::Water);
+                    return;
+                } else if right.is_empty() {
+                    self.set_cell(x + 1, y, Cell::Water);
+                    return;
+                }
             } else {
-                self.set_cell(x, y, Cell::Water);
+                if left.is_empty() && down_left.is_empty() {
+                    self.set_cell(x - 1, y + 1, Cell::Water);
+                    return;
+                } else if left.is_empty() {
+                    self.set_cell(x - 1, y, Cell::Water);
+                    return;
+                }
             }
+
+            self.set_cell(x, y, Cell::Water);
         } else {
             self.set_cell(x, y + 1, Cell::Water);
         }
@@ -164,8 +204,10 @@ impl Application {
 
     pub fn update(&mut self) {
         self.grid.update();
+    }
+
+    pub fn draw(&mut self) {
         self.grid.draw();
-        self.handle_input();
         self.draw_ui();
     }
 
@@ -205,7 +247,7 @@ impl Application {
         self.tools_idx = self.tools.iter().position(|item| *item == cell).unwrap();
     }
 
-    fn handle_input(&mut self) {
+    pub fn handle_input_tools(&mut self) {
         if is_key_pressed(KeyCode::W) {
             self.set_tool(Cell::Water);
         }
@@ -221,7 +263,9 @@ impl Application {
         if is_key_pressed(KeyCode::E) {
             self.set_tool(Cell::Empty);
         }
+    }
 
+    pub fn handle_input(&mut self) {
         let (mut x, mut y) = mouse_position();
         x -= OFFSET.x;
         y -= OFFSET.y;
@@ -242,10 +286,20 @@ async fn main() {
 
     let mut app = Application::new();
 
+    let delay_secs = 0.1;
+    let mut fut = 0.0;
+
     loop {
         clear_background(BLACK);
 
+        if get_time() >= fut {
+            fut = get_time() + delay_secs;
+        }
+        app.handle_input();
         app.update();
+
+        app.draw();
+        app.handle_input_tools();
 
         if is_key_pressed(KeyCode::Escape) {
             break;
